@@ -30,8 +30,16 @@ def list_catalog(
     if q_clean:
         # Используем lower() явно: SQLite LIKE/ILIKE регистронезависим
         # только для ASCII; lower() корректно работает с кириллицей.
-        needle = f"%{q_clean.lower()}%"
-        query = query.filter(func.lower(Product.name).like(needle))
+        # Экранируем %, _ и сам разделитель \ — чтобы поиск трактовал их
+        # как обычные символы, а не подстановочные знаки LIKE.
+        escaped = (
+            q_clean.lower()
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_")
+        )
+        needle = f"%{escaped}%"
+        query = query.filter(func.lower(Product.name).like(needle, escape="\\"))
     products = query.order_by(desc(Product.created_at)).all()
     return templates.TemplateResponse(
         request,
