@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Личный кабинет · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Покупатель</p>
+                <h1>Здравствуйте, {{ user.username }}</h1>
+                <p class="dashboard__sub">
+                    Каталог одобренных товаров, корзина и&nbsp;будущие заказы.
+                </p>
+            </div>
+            <a href="/catalog" class="btn btn--primary">В каталог</a>
+        </div>
+
+        <div class="card-grid">
+            <article class="card">
+                <span class="tag">UC-2</span>
+                <h3>Каталог</h3>
+                <p>Просматривайте опубликованные товары, ищите по&nbsp;названию.</p>
+                <p style="margin-top:14px;"><a href="/catalog" class="btn btn--ghost">Открыть</a></p>
+            </article>
+            <article class="card">
+                <span class="tag">UC-2</span>
+                <h3>Корзина</h3>
+                <p>Изменяйте количество, удаляйте позиции, видите итоговую сумму.</p>
+                <p style="margin-top:14px;"><a href="/cart" class="btn btn--ghost">Перейти</a></p>
+            </article>
+            <article class="card">
+                <span class="tag">UC-3 · UC-4 · UC-5</span>
+                <h3>Мои заказы</h3>
+                <p>Оформляйте заказы, оплачивайте картой, скачивайте чек и&nbsp;следите за&nbsp;доставкой.</p>
+                <p style="margin-top:14px;"><a href="/orders" class="btn btn--ghost">Перейти</a></p>
+            </article>
+        </div>
+    </div>
+</section>
+{% endblock %}

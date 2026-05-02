@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Витрина продавца · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Продавец</p>
+                <h1>Витрина {{ user.username }}</h1>
+                <p class="dashboard__sub">
+                    Управляйте каталогом: добавляйте товары, отслеживайте статусы модерации.
+                </p>
+            </div>
+            <a href="/seller/products/new" class="btn btn--primary">Добавить товар</a>
+        </div>
+
+        <div class="card-grid">
+            <article class="card">
+                <span class="tag">UC-6</span>
+                <h3>Добавить товар</h3>
+                <p>Название, цена, размеры, описание и фото. Товар уйдёт на модерацию администратору.</p>
+                <p style="margin-top:14px;"><a href="/seller/products/new" class="btn btn--ghost">Перейти к форме</a></p>
+            </article>
+            <article class="card">
+                <span class="tag">Каталог</span>
+                <h3>Мои товары</h3>
+                <p>
+                    На модерации: <strong>{{ counts.get("pending", 0) }}</strong> ·
+                    Опубликовано: <strong>{{ counts.get("published", 0) }}</strong> ·
+                    Отклонено: <strong>{{ counts.get("rejected", 0) }}</strong>
+                </p>
+                <p style="margin-top:14px;"><a href="/seller/products" class="btn btn--ghost">Открыть список</a></p>
+            </article>
+            <article class="card">
+                <span class="tag">UC-5</span>
+                <h3>Доставка по заказам</h3>
+                <p>Управляйте статусами доставки по заказам, в которых есть ваши товары.</p>
+                <p style="margin-top:14px;"><a href="/seller/orders" class="btn btn--ghost">Открыть заказы</a></p>
+            </article>
+        </div>
+
+        {% if recent_products %}
+        <section style="margin-top: 56px;">
+            <p class="section-title">Последние добавленные</p>
+            <div class="card-grid">
+                {% for p in recent_products %}
+                <article class="card">
+                    <span class="tag">{{ p.status_label }}</span>
+                    <h3>{{ p.name }}</h3>
+                    <p>Цена: <strong>{{ '%.2f'|format(p.price) }}</strong> ₽
+                        {% if p.sizes_list %} · Размеры: {{ p.sizes_list | join(', ') }}{% endif %}
+                    </p>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% else %}
+        <div class="placeholder">
+            Пока нет добавленных товаров. Нажмите «Добавить товар», чтобы создать первую заявку.
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

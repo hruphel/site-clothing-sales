@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Заявка #{{ product.id }} · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container" style="max-width: 980px;">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Заявка #{{ product.id }} · {{ product.status_label }}</p>
+                <h1>{{ product.name }}</h1>
+                <p class="dashboard__sub">
+                    Продавец: <strong>{{ product.seller.username }}</strong> ({{ product.seller.email }}).
+                    Создано: {{ product.created_at.strftime('%Y-%m-%d %H:%M') }}.
+                </p>
+            </div>
+            <a href="/admin/products?status={{ product.status.value }}" class="btn btn--ghost">К списку</a>
+        </div>
+
+        {% if errors %}
+        <div class="errors">
+            <ul>{% for err in errors %}<li>{{ err }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+
+        <div class="detail-grid">
+            <div class="detail-grid__image">
+                {% if product.image_filename %}
+                    <img src="/uploads/{{ product.image_filename }}" alt="{{ product.name }}" />
+                {% else %}
+                    <div class="product__noimage" style="height: 100%; min-height: 280px; display:grid; place-items:center;">Фото не загружено</div>
+                {% endif %}
+            </div>
+            <div class="detail-grid__info">
+                <p><strong>Цена:</strong> {{ '%.2f'|format(product.price) }} ₽</p>
+                <p><strong>Размеры:</strong>
+                    {% if product.sizes_list %}{{ product.sizes_list | join(', ') }}{% else %}—{% endif %}
+                </p>
+                <p><strong>Описание:</strong></p>
+                <p style="white-space: pre-wrap;">{{ product.description or '—' }}</p>
+
+                {% if product.status.value == "pending" %}
+                <div class="detail-actions">
+                    <form method="post" action="/admin/products/{{ product.id }}/approve" style="display:inline;">
+                        <button type="submit" class="btn btn--primary">Одобрить</button>
+                    </form>
+                </div>
+
+                <form method="post" action="/admin/products/{{ product.id }}/reject" style="margin-top: 24px;">
+                    <div class="field">
+                        <label for="reason">Причина отказа</label>
+                        <textarea class="input" id="reason" name="reason" rows="4" required maxlength="500"
+                                  placeholder="Например: фото не соответствует товару, неточное описание."></textarea>
+                    </div>
+                    <button type="submit" class="btn" style="border-color: #ff8e8e; color: #ff8e8e;">Отклонить</button>
+                </form>
+                {% elif product.status.value == "rejected" and product.rejection_reason %}
+                <p><strong>Причина отказа:</strong> {{ product.rejection_reason }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

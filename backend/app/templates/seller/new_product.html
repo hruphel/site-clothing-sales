@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Добавить товар · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container" style="max-width: 720px;">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Продавец · UC-6</p>
+                <h1>Добавление товара</h1>
+                <p class="dashboard__sub">
+                    Заполните данные и загрузите фото. Товар отправится на модерацию администратору.
+                </p>
+            </div>
+        </div>
+
+        {% if errors %}
+        <div class="errors">
+            <ul>{% for err in errors %}<li>{{ err }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+
+        <form method="post" action="/seller/products/new" enctype="multipart/form-data" novalidate>
+            <div class="field">
+                <label for="name">Название</label>
+                <input class="input" id="name" name="name" type="text" maxlength="160"
+                       value="{{ form.name }}" required />
+            </div>
+            <div class="field">
+                <label for="price">Цена, ₽</label>
+                <input class="input" id="price" name="price" type="text" inputmode="decimal"
+                       value="{{ form.price }}" placeholder="например, 4990" required />
+            </div>
+            <div class="field">
+                <label for="sizes">Размеры (через запятую)</label>
+                <input class="input" id="sizes" name="sizes" type="text"
+                       value="{{ form.sizes }}" placeholder="например, S, M, L, XL" />
+                <p style="color: var(--muted); font-size: 12px; margin-top: 6px;">
+                    До 20 размеров через запятую, каждый 1–8 символов: буквы, цифры,
+                    точка, дефис, пробел. Дубликаты игнорируются.
+                </p>
+            </div>
+            <div class="field">
+                <label for="description">Описание</label>
+                <textarea class="input" id="description" name="description" rows="5"
+                          maxlength="4000">{{ form.description }}</textarea>
+            </div>
+            <div class="field">
+                <label for="image">Фото товара (необязательно)</label>
+                <input class="input" id="image" name="image" type="file" accept="image/*" />
+                <p style="color: var(--muted); font-size: 12px; margin-top: 6px;">
+                    JPEG, PNG, WebP или GIF, до 5&nbsp;МБ.
+                </p>
+            </div>
+            <div class="auth-card__actions" style="display: flex; gap: 12px;">
+                <button type="submit" class="btn btn--primary">Сохранить</button>
+                <a href="/seller" class="btn btn--ghost">Отмена</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

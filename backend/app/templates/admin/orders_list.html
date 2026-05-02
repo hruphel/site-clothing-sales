@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Заказы и доставка · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Администратор</p>
+                <h1>Заказы и доставка</h1>
+                <p class="dashboard__sub">
+                    Все оплаченные заказы. Админ может двигать статус доставки вперёд (имитация курьерской службы).
+                </p>
+            </div>
+            <a href="/admin" class="btn btn--ghost">К панели</a>
+        </div>
+
+        {% if orders %}
+        <div class="cart-list">
+            {% for o in orders %}
+            <div class="cart-row" style="grid-template-columns: 1fr auto;">
+                <div class="cart-row__main">
+                    <h3>
+                        Заказ №{{ o.id }}
+                        <span class="tag tag--delivery-{{ o.delivery_status.value }}" style="margin-left: 10px;">{{ o.delivery_status_label }}</span>
+                    </h3>
+                    <p class="product__meta">
+                        Оплачен: {{ o.paid_at.strftime('%d.%m.%Y %H:%M') if o.paid_at else '—' }} ·
+                        Покупатель: {{ o.buyer.username }} ({{ o.buyer.email }}) ·
+                        Сумма: <strong>{{ '%.2f'|format(o.total) }} ₽</strong>
+                    </p>
+                    <p class="product__meta" style="margin-top: 4px;">
+                        Получатель: {{ o.recipient_name }} · {{ o.recipient_phone }}<br/>
+                        Адрес: {{ o.delivery_address }}
+                    </p>
+                    <ul class="product__meta" style="margin-top: 6px; padding-left: 18px;">
+                        {% for item in o.items %}
+                        <li>{{ item.product_name }} × {{ item.quantity }}{% if item.sizes %} · {{ item.sizes }}{% endif %}</li>
+                        {% endfor %}
+                    </ul>
+                    {% if o.shipped_at %}
+                    <p class="product__meta">Передан в доставку: {{ o.shipped_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                    {% endif %}
+                    {% if o.delivered_at %}
+                    <p class="product__meta">Доставлен: {{ o.delivered_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                    {% endif %}
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; min-width: 220px;">
+                    {% if o.delivery_status.value != "delivered" %}
+                    <form method="post" action="/admin/orders/{{ o.id }}/delivery"
+                          style="display: flex; gap: 6px; align-items: center;">
+                        <select name="delivery_status" class="input" style="padding: 8px;">
+                            {% if o.delivery_status.value == "processing" %}
+                                <option value="shipped">Передан в доставку</option>
+                                <option value="in_transit">В пути</option>
+                                <option value="delivered">Доставлен</option>
+                            {% elif o.delivery_status.value == "shipped" %}
+                                <option value="in_transit">В пути</option>
+                                <option value="delivered">Доставлен</option>
+                            {% elif o.delivery_status.value == "in_transit" %}
+                                <option value="delivered">Доставлен</option>
+                            {% endif %}
+                        </select>
+                        <button type="submit" class="btn btn--primary">Обновить</button>
+                    </form>
+                    {% else %}
+                    <span class="product__meta">Доставка завершена.</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="placeholder">
+            Оплаченных заказов пока нет.
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

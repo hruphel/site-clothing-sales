@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Админ-панель · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Администратор</p>
+                <h1>Панель управления</h1>
+                <p class="dashboard__sub">
+                    Управление пользователями, модерация заявок продавцов и контроль заказов.
+                </p>
+            </div>
+            <a href="/admin/products?status=pending" class="btn btn--primary">Перейти к модерации</a>
+        </div>
+
+        <div class="card-grid">
+            <article class="card">
+                <span class="tag tag--pending">UC-7 · {{ counts.get("pending", 0) }}</span>
+                <h3>Заявки на модерации</h3>
+                <p>Товары, ожидающие проверки администратором.</p>
+                <p style="margin-top:14px;"><a href="/admin/products?status=pending" class="btn btn--ghost">Открыть</a></p>
+            </article>
+            <article class="card">
+                <span class="tag tag--published">Опубликовано · {{ counts.get("published", 0) }}</span>
+                <h3>Каталог</h3>
+                <p>Одобренные товары, доступные покупателям (после реализации UC-2).</p>
+                <p style="margin-top:14px;"><a href="/admin/products?status=published" class="btn btn--ghost">Открыть</a></p>
+            </article>
+            <article class="card">
+                <span class="tag tag--rejected">Отклонено · {{ counts.get("rejected", 0) }}</span>
+                <h3>Отклонённые заявки</h3>
+                <p>История отказов с указанием причин.</p>
+                <p style="margin-top:14px;"><a href="/admin/products?status=rejected" class="btn btn--ghost">Открыть</a></p>
+            </article>
+            <article class="card">
+                <span class="tag">UC-5</span>
+                <h3>Доставка</h3>
+                <p>Список оплаченных заказов и управление статусами доставки.</p>
+                <p style="margin-top:14px;"><a href="/admin/orders" class="btn btn--ghost">Открыть заказы</a></p>
+            </article>
+            <article class="card">
+                <span class="tag">Пользователи · {{ total_users }}</span>
+                <h3>Учётные записи</h3>
+                <p>Управление аккаунтами появится в&nbsp;следующих итерациях.</p>
+            </article>
+        </div>
+    </div>
+</section>
+{% endblock %}

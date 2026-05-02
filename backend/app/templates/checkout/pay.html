@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Оплата заказа №{{ order.id }} · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container" style="max-width: 720px;">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Покупатель · UC-4 · Заказ №{{ order.id }}</p>
+                <h1>Оплата</h1>
+                <p class="dashboard__sub">
+                    Это учебная имитация — реальные платежи не проводятся. После «оплаты»
+                    сформируем чек с номером, transaction_id и&nbsp;PDF.
+                </p>
+            </div>
+            <a href="/orders/{{ order.id }}" class="btn btn--ghost">К&nbsp;заказу</a>
+        </div>
+
+        <div class="card" style="margin-bottom: 18px;">
+            <p class="product__meta" style="margin: 0 0 6px;">К оплате</p>
+            <h2 style="margin: 0;">{{ '%.2f'|format(order.total) }} ₽</h2>
+            <p class="product__meta" style="margin-top: 8px;">
+                {{ order.recipient_name }} · {{ order.recipient_phone }}<br/>
+                {{ order.delivery_address }}
+            </p>
+        </div>
+
+        <form method="post" action="/pay/{{ order.id }}" novalidate>
+            <div class="field">
+                <label for="card_number">Номер карты</label>
+                <input class="input" id="card_number" name="card_number" type="text"
+                       inputmode="numeric" autocomplete="cc-number"
+                       placeholder="4242 4242 4242 4242" required />
+            </div>
+            <div class="field">
+                <label for="card_holder">Владелец карты</label>
+                <input class="input" id="card_holder" name="card_holder" type="text"
+                       autocomplete="cc-name" placeholder="IVAN IVANOV" required />
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="field">
+                    <label for="card_expiry">Срок MM/YY</label>
+                    <input class="input" id="card_expiry" name="card_expiry" type="text"
+                           autocomplete="cc-exp" placeholder="12/29" maxlength="5" required />
+                </div>
+                <div class="field">
+                    <label for="card_cvc">CVC</label>
+                    <input class="input" id="card_cvc" name="card_cvc" type="text"
+                           autocomplete="cc-csc" inputmode="numeric" maxlength="4" required />
+                </div>
+            </div>
+            <div class="auth-card__actions" style="display: flex; gap: 12px;">
+                <button type="submit" class="btn btn--primary">Оплатить {{ '%.2f'|format(order.total) }} ₽</button>
+                <a href="/orders/{{ order.id }}" class="btn btn--ghost">Назад</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

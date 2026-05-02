@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Модерация заявок · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Администратор · UC-7</p>
+                <h1>Модерация заявок</h1>
+                <p class="dashboard__sub">
+                    Заявки на публикацию товаров от продавцов. Одобрите для появления в&nbsp;каталоге или отклоните с&nbsp;указанием причины.
+                </p>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            {% for value, label in filters %}
+                {% set is_active = current_filter == value %}
+                <a href="/admin/products?status={{ value }}"
+                   class="filter-bar__item {% if is_active %}filter-bar__item--active{% endif %}">
+                    {{ label }}
+                    {% if value != "all" %}<span class="filter-bar__count">{{ counts.get(value, 0) }}</span>{% endif %}
+                </a>
+            {% endfor %}
+        </div>
+
+        {% if products %}
+        <div class="product-grid">
+            {% for p in products %}
+            <article class="product">
+                <div class="product__image">
+                    {% if p.image_filename %}
+                        <img src="/uploads/{{ p.image_filename }}" alt="{{ p.name }}" />
+                    {% else %}
+                        <div class="product__noimage">Нет фото</div>
+                    {% endif %}
+                </div>
+                <div class="product__body">
+                    <span class="tag tag--{{ p.status.value }}">{{ p.status_label }}</span>
+                    <h3>{{ p.name }}</h3>
+                    <p class="product__meta">
+                        Продавец: <strong>{{ p.seller.username }}</strong><br>
+                        Цена: <strong>{{ '%.2f'|format(p.price) }}</strong> ₽
+                        {% if p.sizes_list %}<br>Размеры: {{ p.sizes_list | join(', ') }}{% endif %}
+                    </p>
+                    {% if p.status.value == "rejected" and p.rejection_reason %}
+                        <p style="color: #ff8e8e; font-size: 13px;">Причина отказа: {{ p.rejection_reason }}</p>
+                    {% endif %}
+                    <p style="margin-top: 8px;"><a class="btn btn--ghost" href="/admin/products/{{ p.id }}">Открыть</a></p>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="placeholder">Нет заявок в&nbsp;этом разделе.</div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

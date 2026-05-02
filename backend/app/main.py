@@ -1,19 +1,23 @@
-"""Точка входа FastAPI: монтирует API + раздаёт SPA (frontend/dist)."""
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, status
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from .config import settings
 from .database import init_db
-from .routers.api import api_router, receipts_router
+from .routers import admin as admin_router
+from .routers import auth as auth_router
+from .routers import cart as cart_router
+from .routers import catalog as catalog_router
+from .routers import orders as orders_router
+from .routers import pages as pages_router
+from .routers import seller as seller_router
+from .routers.seller import _RedirectToLogin
 
-BACKEND_DIR = Path(__file__).resolve().parent.parent
-REPO_ROOT = BACKEND_DIR.parent
-FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 @asynccontextmanager
@@ -32,50 +36,18 @@ app.add_middleware(
     https_only=False,
 )
 
+@app.exception_handler(_RedirectToLogin)
+async def _redirect_to_login_handler(_request, _exc):  # noqa: ANN001
+    return RedirectResponse(url="/login", status_code=303)
+
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.mount("/uploads", StaticFiles(directory=str(settings.uploads_dir)), name="uploads")
 
-app.include_router(api_router)
-app.include_router(receipts_router)
-
-
-@app.get("/healthz", tags=["meta"])
-def healthz() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-# ---------- SPA ----------
-#
-# В dev-режиме фронт обслуживает Vite (npm run dev), а Vite проксирует
-# /api, /uploads, /receipts на FastAPI. В этом случае FRONTEND_DIST
-# ещё не собран и эти роуты ничего не отдают, но 404 покажет понятное
-# сообщение.
-#
-# В prod-режиме перед запуском uvicorn собирают frontend (npm run build),
-# и FastAPI начинает раздавать static + index.html для всех остальных
-# путей (SPA fallback).
-
-INDEX_HTML = FRONTEND_DIST / "index.html"
-ASSETS_DIR = FRONTEND_DIST / "assets"
-
-if ASSETS_DIR.is_dir():
-    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
-
-
-@app.api_route("/{full_path:path}", methods=["GET", "HEAD"], include_in_schema=False)
-def spa_fallback(full_path: str):
-    # API/служебные пути обработаны выше; сюда они не доходят (FastAPI
-    # подбирает более специфичный роут). Но если кто-то попал — 404.
-    if full_path.startswith(("api/", "uploads/", "receipts/", "assets/")):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    if INDEX_HTML.exists():
-        return FileResponse(str(INDEX_HTML))
-    # Frontend ещё не собран — показываем подсказку.
-    return JSONResponse(
-        status_code=503,
-        content={
-            "detail": (
-                "Фронтенд не собран. Запустите `npm install` и `npm run dev` "
-                "в каталоге frontend/, либо `npm run build` для прод-сборки."
-            )
-        },
-    )
+app.include_router(pages_router.router)
+app.include_router(auth_router.router)
+app.include_router(catalog_router.router)
+app.include_router(cart_router.router)
+app.include_router(orders_router.router)
+app.include_router(seller_router.router)
+app.include_router(admin_router.router)

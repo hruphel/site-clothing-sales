@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Корзина · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container" style="max-width: 980px;">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Покупатель · UC-2</p>
+                <h1>Корзина</h1>
+                <p class="dashboard__sub">
+                    Изменяйте количество, удаляйте позиции, переходите к&nbsp;оформлению заказа.
+                </p>
+            </div>
+            <a href="/catalog" class="btn btn--ghost">Продолжить покупки</a>
+        </div>
+
+        {% if items %}
+        <div class="cart-list">
+            {% for item in items %}
+            <div class="cart-row">
+                <a class="cart-row__image" href="/catalog/{{ item.product.id }}">
+                    {% if item.product.image_filename %}
+                        <img src="/uploads/{{ item.product.image_filename }}" alt="{{ item.product.name }}" />
+                    {% else %}
+                        <div class="product__noimage">Нет фото</div>
+                    {% endif %}
+                </a>
+                <div class="cart-row__main">
+                    <h3><a href="/catalog/{{ item.product.id }}" class="product__title-link">{{ item.product.name }}</a></h3>
+                    <p class="product__meta">
+                        Цена: <strong>{{ '%.2f'|format(item.product.price) }}</strong> ₽
+                        {% if item.product.sizes_list %} · Размеры: {{ item.product.sizes_list | join(', ') }}{% endif %}
+                    </p>
+                </div>
+                <form method="post" action="/cart/{{ item.id }}/update" class="cart-row__qty">
+                    <label for="qty-{{ item.id }}">Кол-во</label>
+                    <input class="input" id="qty-{{ item.id }}" name="quantity" type="number"
+                           min="1" max="99" value="{{ item.quantity }}" />
+                    <button type="submit" class="btn btn--ghost">Обновить</button>
+                </form>
+                <div class="cart-row__total">
+                    {{ '%.2f'|format(item.line_total) }} ₽
+                </div>
+                <form method="post" action="/cart/{{ item.id }}/remove" class="cart-row__remove">
+                    <button type="submit" class="btn--logout" title="Удалить">×</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="cart-total">
+            <p>Итого: <strong>{{ '%.2f'|format(total) }} ₽</strong></p>
+            <a class="btn btn--primary" href="/checkout">Оформить заказ</a>
+        </div>
+        {% else %}
+        <div class="placeholder">
+            Корзина пуста. <a href="/catalog">Перейти в каталог</a> и добавить товары.
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

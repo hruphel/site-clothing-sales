@@ -1,274 +1,228 @@
-# Maison Couture — интернет-магазин одежды
+# Atelier — интернет-магазин одежды
 
-Учебный проект: разделён на **backend (FastAPI, JSON-API)** и
-**frontend (React + TypeScript, SPA)**. Авторизация — сессионная (cookie).
-По умолчанию используется **SQLite** для удобства запуска; легко
-переключается на **PostgreSQL** через `DATABASE_URL`.
+Учебный проект информационной системы интернет-магазина одежды.
+Реализован на **Python (FastAPI)** с использованием **Jinja2** шаблонов и
+**SQLAlchemy** в качестве ORM. По умолчанию используется **SQLite** для удобства
+запуска; для продакшена/учебных целей легко переключается на **PostgreSQL**.
 
-## Что реализовано
+## Что уже реализовано
 
-- **UC-1** — регистрация и вход для трёх ролей (`buyer`, `seller`, `admin`).
-  Админ создаётся через CLI-скрипт.
-- **UC-2** — публичный каталог опубликованных товаров с поиском по
-  названию (регистронезависимый, работает с кириллицей) и корзина
-  покупателя (добавить, изменить количество, удалить).
-- **UC-3** — оформление заказа со снапшотом товаров, валидацией адреса
-  и очисткой корзины.
-- **UC-4** — имитация оплаты + PDF-чек (`receipt_number`,
-  `transaction_id`, `pdf_url`), скачивание защищено ACL (владелец или
-  админ).
-- **UC-5** — статусы доставки `processing → shipped → in_transit →
-  delivered`. Меняют вперёд админ (любой оплаченный заказ) и продавец
-  (только заказы со своими товарами). Покупатель видит трекер на
-  странице заказа.
-- **UC-6** — добавление товара продавцом (multipart-загрузка фото,
-  валидация имени, цены, размеров, описания), редактирование и удаление
-  заявки, пока она в статусе `pending`.
-- **UC-7** — модерация заявок администратором (одобрение / отказ с
-  обязательной причиной).
+- Главная страница с описанием возможностей системы для трёх ролей.
+- Регистрация и вход для покупателя и продавца (роли `buyer`, `seller`).
+- Вход для администратора (роль `admin`, заводится через CLI-скрипт).
+- Сессионная аутентификация (cookie + подпись).
+- Личные кабинеты для каждой роли с переходами по ролям.
+- **UC-6: Добавление товара продавцом** — форма с валидацией (название
+  непустое и до 160 символов, цена &gt; 0, описание до 4000 символов,
+  размеры — до 20 значений по 1–8 символов из букв/цифр/точки/дефиса/
+  пробела), загрузка фото (JPEG/PNG/WebP/GIF до 5 МБ). Товары создаются
+  со статусом «На модерации».
+- **Редактирование заявки продавцом**, пока товар на модерации
+  (`/seller/products/{id}/edit`). После одобрения или отказа кнопка
+  «Редактировать» в списке «Мои товары» исчезает, а попытка зайти на
+  форму редактирования возвращает 409.
+- Список «Мои товары» для продавца со статусами модерации и причиной
+  отказа (если заявка отклонена).
+- **UC-7: Модерация заявок администратором** — список заявок с фильтрами
+  по статусу, детальная карточка с действиями «Одобрить» / «Отклонить»
+  (с обязательным указанием причины). Одобрение переводит товар в
+  статус «Опубликован», отказ — в «Отклонён».
+- **UC-2: Публичный каталог + корзина покупателя** — `/catalog` со
+  списком опубликованных товаров и поиском по названию (регистронезависимый,
+  работает с кириллицей), `/catalog/{id}` с детальной карточкой,
+  `/cart` с управлением количеством, удалением позиций и итоговой суммой.
+  Кнопка «В корзину» доступна только покупателям.
+- **UC-3: Оформление заказа покупателем** — `/checkout` с формой адреса
+  доставки (имя, телефон, адрес, комментарий), валидация полей. При
+  оформлении создаётся заказ со снапшотом товаров (имя/цена на момент
+  заказа), корзина очищается.
+- **UC-4: Имитация оплаты + чек** — `/pay/{order_id}` с формой карты
+  (учебная имитация, реальный шлюз не подключён). После «оплаты»
+  генерируется чек со собственным номером (`RCP-YYYYMMDD-XXXXXX`),
+  `transaction_id` и PDF-файлом, который покупатель может скачать
+  с детальной страницы заказа (`/orders/{id}`) или из списка
+  `/orders`. Скачивание защищено: владелец заказа или администратор.
+- Отмена неоплаченного заказа из его карточки (`/orders/{id}/cancel`).
+- **UC-5: Отслеживание доставки** — у каждого оплаченного заказа есть
+  статус доставки (`processing` → `shipped` → `in_transit` →
+  `delivered`). Покупатель видит статус и временные метки на
+  `/orders/{id}` и `/orders`. Двигать статус **только вперёд** могут:
+  - администратор — для любого оплаченного заказа (`/admin/orders`);
+  - продавец — только для заказов, в которых есть его собственные
+    товары (`/seller/orders`).
+  Реальный курьерский сервис не интегрирован — это имитация
+  (учебный проект).
+- **Удаление заявки на товар продавцом** — продавец может удалить
+  свою заявку из списка «Мои товары», только пока она в статусе
+  `pending` (после одобрения/отказа удаление возвращает 409).
+  Файл фото подчищается с диска после коммита транзакции.
 
-## Структура репозитория
+## Структура
 
 ```
-backend/                       # FastAPI: только JSON API + раздача SPA
+backend/
 ├── app/
-│   ├── main.py                # включает /api/* роутеры и SPA-fallback
-│   ├── config.py              # настройки + uploads_dir, receipts_dir
-│   ├── database.py            # engine + SessionLocal + init_db
-│   ├── models.py              # User, Product, CartItem, Order, OrderItem, Receipt
-│   ├── schemas.py             # Pydantic DTO для API
-│   ├── security.py            # passlib/bcrypt
-│   ├── dependencies.py        # get_current_user (по сессии)
-│   ├── routers/api/
-│   │   ├── auth.py            # /api/auth/{register,login,logout,me}
-│   │   ├── catalog.py         # /api/catalog
-│   │   ├── cart.py            # /api/cart
-│   │   ├── orders.py          # /api/orders + /receipts/{file}
-│   │   ├── seller.py          # /api/seller/*
-│   │   └── admin.py           # /api/admin/*
-│   └── services/
-│       ├── delivery.py        # переходы статусов доставки
-│       └── receipts.py        # PDF чека (reportlab)
+│   ├── main.py            # FastAPI приложение
+│   ├── config.py          # Настройки (pydantic-settings) + uploads_dir
+│   ├── database.py        # Engine + SessionLocal + init_db
+│   ├── models.py          # User, Product, CartItem, Order, OrderItem, Receipt
+│   ├── security.py        # passlib/bcrypt
+│   ├── dependencies.py    # get_current_user
+│   ├── templating.py      # Jinja2Templates
+│   ├── routers/
+│   │   ├── pages.py       # /, /account
+│   │   ├── auth.py        # /register, /login, /logout
+│   │   ├── seller.py      # /seller, /seller/products[/new|/{id}/edit]
+│   │   ├── catalog.py     # /catalog, /catalog/{id}
+│   │   ├── cart.py        # /cart, /cart/add, /cart/{id}/{update|remove}
+│   │   ├── orders.py      # /checkout, /pay/{id}, /orders, /receipts/{file}
+│   │   └── admin.py       # /admin, /admin/products[/{id}{/approve|/reject}]
+│   ├── services/
+│   │   └── receipts.py    # PDF чека (reportlab) + номера и transaction_id
+│   ├── templates/
+│   │   ├── base.html, index.html, login.html, register.html, buyer.html
+│   │   ├── seller/        # dashboard, new_product, edit_product, products
+│   │   ├── catalog/       # list, detail
+│   │   ├── cart/          # view
+│   │   ├── checkout/      # address, pay
+│   │   ├── orders/        # list, detail
+│   │   └── admin/         # dashboard, products_list, product_detail
+│   └── static/styles.css  # Премиум-минимал стили
 ├── scripts/create_admin.py
-├── uploads/                   # фото товаров (раздаётся через /uploads)
-├── receipts/                  # PDF-чеки (раздаётся через /receipts ACL)
-└── requirements.txt
-
-frontend/                      # Vite + React + TypeScript SPA
-├── src/
-│   ├── main.tsx, App.tsx
-│   ├── auth.tsx               # AuthContext, useAuth
-│   ├── api.ts                 # fetch-обёртка с обработкой ошибок
-│   ├── types.ts               # mirror of backend/app/schemas.py
-│   ├── components/            # Layout, RequireRole, DeliveryTrack, …
-│   └── pages/                 # public, buyer, seller, admin
-├── vite.config.ts             # dev-прокси /api, /uploads, /receipts → :8000
-├── package.json
-└── tsconfig.json
+├── uploads/               # фото товаров (раздаётся через /uploads)
+├── receipts/              # PDF чеков (скачиваются через /receipts/{filename})
+├── requirements.txt
+└── .env.example
 ```
 
-## Запуск через Docker Compose (быстрый путь)
+## Быстрый запуск (рекомендуется)
 
-Подходит, если нужно поднять всё одной командой и не возиться с
-Python/Node локально. Требуется только Docker Desktop (Windows/macOS) или
-Docker Engine + `docker compose` (Linux).
+Минимальные требования: **Python 3.10+**.
 
-```powershell
-cd path\to\site-clothing-sales
+```bash
+git clone https://github.com/hruphel/site-clothing-sales.git
+cd site-clothing-sales/backend
 
-# 1) Создать .env из примера (можно отредактировать порт/секрет)
-copy .env.example .env
+# 1. Виртуальное окружение
+python3 -m venv .venv
+source .venv/bin/activate            # Windows: .venv\Scripts\activate
 
-# 2) Поднять backend + frontend
-docker compose up -d --build
-
-# 3) Создать администратора (один раз; пароль поменяйте)
-docker compose exec backend `
-  python -m scripts.create_admin --username admin --email admin@example.com --password "changeme123"
-```
-
-Откройте **http://127.0.0.1:8080** — это nginx, который раздаёт SPA и
-проксирует `/api`, `/uploads`, `/receipts` на FastAPI. Порт настраивается
-в `.env` через `FRONTEND_PORT`.
-
-Полезные команды:
-
-```powershell
-docker compose ps                 # статус контейнеров
-docker compose logs -f backend    # логи бэка
-docker compose logs -f frontend   # логи nginx
-docker compose restart backend    # рестарт после изменений в .env
-docker compose down               # остановить (volumes сохранятся)
-docker compose down -v            # остановить и стереть БД/uploads/receipts
-docker compose pull && docker compose up -d --build   # обновить образы
-```
-
-Файлы и БД лежат в Docker-volumes:
-- `backend_data` — SQLite-БД (`clothing_sales.db`).
-- `backend_uploads` — фото товаров.
-- `backend_receipts` — PDF-чеки.
-
-Чтобы переключиться на PostgreSQL — в `.env` поправьте `DATABASE_URL`,
-раскомментируйте `POSTGRES_*` и поднимите профиль:
-
-```powershell
-docker compose --profile postgres up -d --build
-```
-
-### Как подтянуть из git и переподнять
-
-```powershell
-cd path\to\site-clothing-sales
-git fetch origin
-git checkout main                 # или нужную ветку
-git pull
-docker compose up -d --build      # пересобрать образы и перезапустить
-```
-
-### Откат, если что-то сломалось
-
-1. **Просто вернуться на main** (если разрабатывали в ветке):
-   ```powershell
-   docker compose down
-   git checkout main
-   git pull
-   docker compose up -d --build
-   ```
-2. **Откатить уже мерженный PR** — в GitHub нажать «Revert» на PR
-   (создастся обратный PR), либо локально:
-   ```powershell
-   git checkout main
-   git pull
-   git revert -m 1 <merge-commit-sha>
-   git push origin main
-   docker compose up -d --build
-   ```
-3. **Совсем чистый сброс** (удалит данные):
-   ```powershell
-   docker compose down -v --rmi all      # стереть контейнеры, volumes и образы
-   git checkout main
-   git pull
-   docker compose up -d --build
-   ```
-4. **Старая SSR-версия** (до разделения backend/frontend) — это коммит
-   `9f1f57a` на `main` (мерж PR #8). Если этот PR ещё не смержен, просто
-   `git checkout main` и работайте с прошлой версией:
-   ```powershell
-   git checkout main
-   git pull
-   ```
-   Если уже смержен и нужно полностью вернуться к SSR — сделайте «Revert»
-   через GitHub-UI. Силой ресетить master на старый коммит можно, но
-   только если вы уверены, что никто другой не зависит от истории.
-
-## Запуск без Docker (Windows / PowerShell)
-
-> На macOS/Linux замените `python` → `python3` и используйте
-> `source .venv/bin/activate` вместо `.\.venv\Scripts\Activate.ps1`.
-
-### 1. Подтянуть код
-
-```powershell
-cd path\to\site-clothing-sales
-git checkout main             # или любую другую ветку
-git pull origin main
-```
-
-### 2. Backend
-
-```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
+# 2. Зависимости
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# По желанию пересоздать БД (после изменения схемы)
-del clothing_sales.db
+# 3. (опционально) собственные настройки
+cp .env.example .env
 
-# Создать администратора (нужно один раз)
-python -m scripts.create_admin --username admin --email admin@example.com --password "changeme123"
-
+# 4. Запуск dev-сервера
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Backend поднимется на `http://127.0.0.1:8000` и будет отдавать только
-JSON-API + статику (`/uploads`, `/receipts`). Если фронт ещё не
-собран и обращаются к корню `/`, вернётся 503 с подсказкой.
+После старта откройте http://127.0.0.1:8000 — увидите главную страницу.
 
-### 3. Frontend (новый второй терминал)
+База данных SQLite (`backend/clothing_sales.db`) и таблицы создаются
+автоматически при первом запуске.
 
-```powershell
-cd path\to\site-clothing-sales\frontend
-npm install
-npm run dev
+## Создание администратора
+
+Регистрация администратора через форму намеренно отключена. Заведите
+аккаунт администратора через CLI-скрипт (запускать из директории `backend/`):
+
+```bash
+python -m scripts.create_admin \
+    --username admin \
+    --email admin@example.com \
+    --password 'changeme123'
 ```
 
-Vite поднимется на `http://127.0.0.1:5173` и будет проксировать
-`/api`, `/uploads`, `/receipts` на backend `:8000`. Открывать
-приложение нужно по адресу Vite: <http://127.0.0.1:5173>.
+После этого войдите на `/login` под этим логином — система перенаправит
+в `/admin`.
 
-### Прод-сборка одним процессом
+## Как проверить все три роли
 
-Если нужно запустить всё одним `uvicorn` (без Vite), сначала соберите
-фронт:
+1. Зарегистрируйтесь на `/register`, выбрав «Покупатель» — вы попадёте
+   на `/account`.
+2. Выйдите, зарегистрируйтесь повторно с другим логином и ролью «Продавец»
+   — попадёте на `/seller`. Откройте `/seller/products/new`, добавьте
+   товар (название, цена, размеры, фото) — он появится в `/seller/products`
+   со статусом «На модерации».
+3. Создайте администратора через `scripts/create_admin.py` и войдите
+   на `/login` — попадёте на `/admin`.
 
-```powershell
-cd frontend
-npm install
-npm run build           # создаст frontend\dist
+## UC-6: добавление товара (продавец)
+
+- `GET /seller/products/new` — форма добавления (только для роли
+  `seller`).
+- `POST /seller/products/new` — `multipart/form-data` с полями:
+  `name`, `price`, `sizes`, `description`, `image` (опционально).
+- Валидация: название непустое (≤160 символов), цена &gt; 0 (поддерживает
+  разделители `.` и `,`), фото — JPEG/PNG/WebP/GIF до 5 МБ.
+- Файлы сохраняются в `backend/uploads/` и раздаются по `/uploads/...`
+  через `StaticFiles`.
+- При успехе — редирект на `/seller/products`.
+- Товар создаётся со статусом `pending` (на модерации).
+
+## UC-2: каталог и корзина (покупатель)
+
+- `GET /catalog?q=<строка>` — список опубликованных товаров с
+  опциональным поиском по подстроке имени. Поиск регистронезависимый
+  и поддерживает кириллицу (через регистрацию Python-овской `lower()`
+  как функции SQLite).
+- `GET /catalog/{id}` — детальная карточка опубликованного товара.
+  Для непубликованных и несуществующих — 404. Под покупателем виден
+  блок «Добавить в корзину» с выбором количества.
+- `GET /cart` — корзина покупателя. Под анонимом — редирект на
+  `/login`, под продавцом/админом — 403.
+- `POST /cart/add` — добавить товар (`product_id`, `quantity` 1–99).
+  При повторном добавлении количество суммируется (но не превышает 99).
+  404 если товар не существует или не опубликован.
+- `POST /cart/{id}/update` — изменить количество позиции (1–99).
+- `POST /cart/{id}/remove` — удалить позицию.
+- В корзине отображаются только позиции с актуальными опубликованными
+  товарами (если продавец удалит товар или модерация отклонит — позиция
+  скрывается, но в БД остаётся; чистится по мере необходимости).
+
+## UC-7: модерация заявок (администратор)
+
+- `GET /admin` — панель администратора со счётчиками статусов.
+- `GET /admin/products?status=pending|published|rejected|all` — список
+  заявок с фильтром по статусу (по умолчанию `pending`).
+- `GET /admin/products/{id}` — карточка заявки: фото, цена, размеры,
+  описание, продавец, действия модерации.
+- `POST /admin/products/{id}/approve` — переводит заявку в `published`,
+  очищает причину отказа. Доступно только для заявок в статусе `pending`
+  (иначе 409).
+- `POST /admin/products/{id}/reject` — `application/x-www-form-urlencoded`
+  с полем `reason` (обязательное, ≤500 символов). Переводит в `rejected`
+  и сохраняет причину. Также 409 если заявка уже не в `pending`.
+- После любого действия — редирект на `/admin/products?status=pending`.
+- Продавец видит причину отказа в `/seller/products`.
+
+## Использование PostgreSQL (опционально)
+
+Если хотите следовать ТЗ дословно (PostgreSQL):
+
+1. Поднимите PostgreSQL и создайте БД, например `clothing_sales`.
+2. В `.env` пропишите:
+
+   ```
+   DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/clothing_sales
+   ```
+
+3. Перезапустите сервер. Таблицы создадутся автоматически.
+
+Самый быстрый способ поднять Postgres локально:
+
+```bash
+docker run --name clothing-pg -e POSTGRES_PASSWORD=postgres \
+    -e POSTGRES_DB=clothing_sales -p 5432:5432 -d postgres:16
 ```
 
-Затем поднимите backend как обычно — FastAPI начнёт отдавать
-`frontend/dist/index.html` и `dist/assets/*` напрямую.
+## Стек
 
-```powershell
-cd ..\backend
-.\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-Открывайте `http://127.0.0.1:8000`.
-
-## Переменные окружения (опционально)
-
-В `backend/.env` (или системные переменные):
-
-```
-APP_NAME=Maison Couture
-SECRET_KEY=dev-secret-please-change
-DATABASE_URL=sqlite:///./clothing_sales.db
-SESSION_MAX_AGE=1209600
-UPLOADS_DIR=uploads
-RECEIPTS_DIR=receipts
-```
-
-Для PostgreSQL:
-
-```
-DATABASE_URL=postgresql+psycopg2://user:pass@localhost:5432/clothing_sales
-```
-
-## API в двух словах
-
-| Роут | Метод | Кто | Назначение |
-|---|---|---|---|
-| `/api/auth/register` | POST | гость | регистрация (`buyer`, `seller`) |
-| `/api/auth/login` | POST | гость | вход (логин или email + пароль) |
-| `/api/auth/logout` | POST | любой | выход |
-| `/api/auth/me` | GET | любой | текущий пользователь или `null` |
-| `/api/catalog` | GET | любой | список опубликованных товаров (`?q=...`) |
-| `/api/catalog/{id}` | GET | любой | карточка товара |
-| `/api/cart`, `/api/cart/add`, `/api/cart/{id}/{update|remove}`, `/api/cart/clear` | — | покупатель | корзина |
-| `/api/orders`, `/api/orders/checkout`, `/api/orders/{id}/{pay|cancel}` | — | покупатель | заказы и оплата |
-| `/receipts/{filename}` | GET | владелец/админ | скачать PDF-чек |
-| `/api/seller/dashboard`, `/api/seller/products[...]`, `/api/seller/orders[...]` | — | продавец | UC-6 + UC-5 |
-| `/api/admin/dashboard`, `/api/admin/products[...]`, `/api/admin/orders[...]` | — | админ | UC-7 + UC-5 |
-| `/api/enums` | GET | любой | словари статусов (для фронта) |
-
-## Что НЕ делалось
-
-- Реальная интеграция с платёжным шлюзом или курьерским API.
-- Тесты (TBD).
-- Восстановление пароля / смена email.
+- FastAPI + Uvicorn — веб-сервер и роутинг
+- Jinja2 — серверный рендеринг HTML
+- SQLAlchemy 2.0 — ORM (SQLite/PostgreSQL)
+- passlib + bcrypt — хеширование паролей
+- Starlette SessionMiddleware + itsdangerous — сессии в cookie
+- Pydantic / pydantic-settings — настройки

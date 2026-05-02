@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Мои товары · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Продавец</p>
+                <h1>Мои товары</h1>
+                <p class="dashboard__sub">
+                    Все товары и их статусы модерации. Новые товары проходят проверку администратором.
+                </p>
+            </div>
+            <a href="/seller/products/new" class="btn btn--primary">Добавить товар</a>
+        </div>
+
+        {% if products %}
+        <div class="product-grid">
+            {% for p in products %}
+            <article class="product">
+                <div class="product__image">
+                    {% if p.image_filename %}
+                        <img src="/uploads/{{ p.image_filename }}" alt="{{ p.name }}" />
+                    {% else %}
+                        <div class="product__noimage">Нет фото</div>
+                    {% endif %}
+                </div>
+                <div class="product__body">
+                    <span class="tag tag--{{ p.status.value }}">{{ p.status_label }}</span>
+                    <h3>{{ p.name }}</h3>
+                    <p class="product__meta">
+                        Цена: <strong>{{ '%.2f'|format(p.price) }}</strong> ₽
+                        {% if p.sizes_list %}<br>Размеры: {{ p.sizes_list | join(', ') }}{% endif %}
+                    </p>
+                    {% if p.description %}
+                        <p class="product__desc">{{ p.description }}</p>
+                    {% endif %}
+                    {% if p.status.value == "rejected" and p.rejection_reason %}
+                        <p style="color: var(--danger); font-size: 13px;">Причина отказа: {{ p.rejection_reason }}</p>
+                    {% endif %}
+                    {% if p.status.value == "pending" %}
+                        <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            <a href="/seller/products/{{ p.id }}/edit" class="btn btn--ghost">Редактировать</a>
+                            <form method="post" action="/seller/products/{{ p.id }}/delete"
+                                  onsubmit="return confirm('Удалить эту заявку на товар? Действие нельзя отменить.');"
+                                  style="display: inline;">
+                                <button type="submit" class="btn btn--ghost" style="color: var(--danger); border-color: rgba(220, 90, 90, 0.4);">
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="placeholder">
+            Пока нет товаров. Создайте первый — нажмите «Добавить товар».
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

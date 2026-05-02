@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Atelier — интернет-магазин одежды{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}" />
+</head>
+<body>
+    <header class="site-header">
+        <div class="container site-header__inner">
+            <a href="/" class="brand">
+                <span class="brand-mark">A</span>
+                <span>Atelier</span>
+            </a>
+            <nav class="nav">
+                <a href="/">Главная</a>
+                <a href="/catalog">Каталог</a>
+                {% if user %}
+                    {% if user.role.value == "buyer" %}
+                        <a href="/cart">Корзина</a>
+                        <a href="/account">Личный кабинет</a>
+                    {% endif %}
+                    {% if user.role.value == "seller" %}<a href="/seller">Витрина продавца</a>{% endif %}
+                    {% if user.role.value == "admin" %}<a href="/admin">Админ-панель</a>{% endif %}
+                    <span style="color: var(--muted);">{{ user.username }} · {{ user.role_label }}</span>
+                    <form method="post" action="/logout" style="display:inline;">
+                        <button type="submit" class="btn--logout">Выйти</button>
+                    </form>
+                {% else %}
+                    <a href="/login">Войти</a>
+                    <a href="/register" class="btn btn--primary">Регистрация</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+    <main>{% block content %}{% endblock %}</main>
+    <footer class="site-footer">
+        <div class="container">
+            © {{ 2025 }} Atelier · Интернет-магазин одежды · Учебный проект
+        </div>
+    </footer>
+</body>
+</html>

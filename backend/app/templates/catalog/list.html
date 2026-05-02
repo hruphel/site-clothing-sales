@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Каталог · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Каталог</p>
+                <h1>Опубликованные товары</h1>
+                <p class="dashboard__sub">
+                    Все товары, прошедшие модерацию. Поиск — по названию.
+                </p>
+            </div>
+        </div>
+
+        <form method="get" action="/catalog" class="search-bar">
+            <input class="input" type="search" name="q" value="{{ query }}"
+                   placeholder="Поиск по названию (например: куртка)" />
+            <button type="submit" class="btn btn--primary">Найти</button>
+            {% if query %}<a href="/catalog" class="btn btn--ghost">Сбросить</a>{% endif %}
+        </form>
+
+        {% if products %}
+        <div class="product-grid">
+            {% for p in products %}
+            <article class="product">
+                <a href="/catalog/{{ p.id }}" class="product__image-link">
+                    <div class="product__image">
+                        {% if p.image_filename %}
+                            <img src="/uploads/{{ p.image_filename }}" alt="{{ p.name }}" />
+                        {% else %}
+                            <div class="product__noimage">Нет фото</div>
+                        {% endif %}
+                    </div>
+                </a>
+                <div class="product__body">
+                    <h3><a href="/catalog/{{ p.id }}" class="product__title-link">{{ p.name }}</a></h3>
+                    <p class="product__meta">
+                        <strong>{{ '%.2f'|format(p.price) }}</strong> ₽
+                        {% if p.sizes_list %}<br>Размеры: {{ p.sizes_list | join(', ') }}{% endif %}
+                    </p>
+                    {% if user and user.role.value == "buyer" %}
+                    <form method="post" action="/cart/add" style="margin-top: 10px;">
+                        <input type="hidden" name="product_id" value="{{ p.id }}" />
+                        <input type="hidden" name="quantity" value="1" />
+                        <button type="submit" class="btn btn--primary">В корзину</button>
+                    </form>
+                    {% else %}
+                    <a href="/catalog/{{ p.id }}" class="btn btn--ghost" style="margin-top: 10px;">Подробнее</a>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="placeholder">
+            {% if query %}
+                Ничего не найдено по запросу «{{ query }}». Попробуйте другой запрос.
+            {% else %}
+                Пока нет опубликованных товаров.
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

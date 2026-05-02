@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Регистрация · Atelier{% endblock %}
+{% block content %}
+<section class="auth-shell">
+    <div class="auth-card">
+        <p class="auth-card__eyebrow">Atelier · Регистрация</p>
+        <h1>Создайте аккаунт</h1>
+        <p class="auth-card__lead">
+            Выберите роль — покупатель или продавец. Аккаунты администраторов создаются отдельно.
+        </p>
+
+        {% if errors %}
+        <div class="errors">
+            <ul>{% for err in errors %}<li>{{ err }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+
+        <form method="post" action="/register" novalidate>
+            <div class="field">
+                <label>Я регистрируюсь как</label>
+                <div class="role-tabs">
+                    {% for value, label in roles %}
+                    <input type="radio" id="role-{{ value }}" name="role" value="{{ value }}"
+                        {% if form.role == value %}checked{% endif %} />
+                    <label for="role-{{ value }}">{{ label }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="field">
+                <label for="username">Логин</label>
+                <input class="input" id="username" name="username" type="text" autocomplete="username"
+                       minlength="3" maxlength="64" value="{{ form.username }}" required />
+            </div>
+            <div class="field">
+                <label for="email">Email</label>
+                <input class="input" id="email" name="email" type="email" autocomplete="email"
+                       value="{{ form.email }}" required />
+            </div>
+            <div class="field">
+                <label for="password">Пароль</label>
+                <input class="input" id="password" name="password" type="password" autocomplete="new-password"
+                       minlength="6" required />
+            </div>
+            <div class="field">
+                <label for="password_confirm">Повторите пароль</label>
+                <input class="input" id="password_confirm" name="password_confirm" type="password"
+                       autocomplete="new-password" minlength="6" required />
+            </div>
+            <div class="auth-card__actions">
+                <button class="btn btn--primary btn--block" type="submit">Создать аккаунт</button>
+            </div>
+        </form>
+
+        <p class="auth-card__alt">Уже есть аккаунт? <a href="/login">Войти</a></p>
+    </div>
+</section>
+{% endblock %}

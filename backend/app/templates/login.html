@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Вход · Atelier{% endblock %}
+{% block content %}
+<section class="auth-shell">
+    <div class="auth-card">
+        <p class="auth-card__eyebrow">Atelier · Вход</p>
+        <h1>С возвращением</h1>
+        <p class="auth-card__lead">
+            Войдите как покупатель, продавец или администратор. Роль определяется автоматически по вашему аккаунту.
+        </p>
+
+        {% if errors %}
+        <div class="errors">
+            <ul>{% for err in errors %}<li>{{ err }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+
+        <form method="post" action="/login" novalidate>
+            <div class="field">
+                <label for="identifier">Логин или email</label>
+                <input class="input" id="identifier" name="identifier" type="text" autocomplete="username"
+                       value="{{ form.identifier }}" required />
+            </div>
+            <div class="field">
+                <label for="password">Пароль</label>
+                <input class="input" id="password" name="password" type="password" autocomplete="current-password" required />
+            </div>
+            <div class="auth-card__actions">
+                <button class="btn btn--primary btn--block" type="submit">Войти</button>
+            </div>
+        </form>
+
+        <p class="auth-card__alt">Нет аккаунта? <a href="/register">Создать</a></p>
+    </div>
+</section>
+{% endblock %}

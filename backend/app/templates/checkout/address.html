@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Оформление заказа · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container" style="max-width: 980px;">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Покупатель · UC-3</p>
+                <h1>Оформление заказа</h1>
+                <p class="dashboard__sub">
+                    Укажите адрес и контакты получателя. После сохранения перейдём к оплате.
+                </p>
+            </div>
+            <a href="/cart" class="btn btn--ghost">Вернуться в корзину</a>
+        </div>
+
+        {% if errors %}
+        <div class="errors">
+            <ul>{% for err in errors %}<li>{{ err }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+
+        <div class="checkout-grid">
+            <form method="post" action="/checkout" novalidate class="checkout-form">
+                <div class="field">
+                    <label for="recipient_name">Имя получателя</label>
+                    <input class="input" id="recipient_name" name="recipient_name" type="text"
+                           maxlength="160" value="{{ form.recipient_name }}" required />
+                </div>
+                <div class="field">
+                    <label for="recipient_phone">Телефон</label>
+                    <input class="input" id="recipient_phone" name="recipient_phone" type="tel"
+                           maxlength="40" value="{{ form.recipient_phone }}"
+                           placeholder="+7 (999) 123-45-67" required />
+                </div>
+                <div class="field">
+                    <label for="delivery_address">Адрес доставки</label>
+                    <textarea class="input" id="delivery_address" name="delivery_address" rows="3"
+                              maxlength="500" required
+                              placeholder="Город, улица, дом, квартира, индекс">{{ form.delivery_address }}</textarea>
+                </div>
+                <div class="field">
+                    <label for="comment">Комментарий курьеру (необязательно)</label>
+                    <textarea class="input" id="comment" name="comment" rows="3"
+                              maxlength="1000">{{ form.comment }}</textarea>
+                </div>
+                <div class="auth-card__actions" style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn btn--primary">Перейти к оплате</button>
+                    <a href="/cart" class="btn btn--ghost">Отмена</a>
+                </div>
+            </form>
+
+            <aside class="checkout-summary">
+                <h3>Ваш заказ</h3>
+                <ul class="checkout-items">
+                    {% for item in items %}
+                    <li>
+                        <span class="checkout-items__name">{{ item.product.name }}</span>
+                        <span class="checkout-items__qty">× {{ item.quantity }}</span>
+                        <span class="checkout-items__total">{{ '%.2f'|format(item.line_total) }} ₽</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <p class="checkout-summary__total">
+                    Итого: <strong>{{ '%.2f'|format(total) }} ₽</strong>
+                </p>
+            </aside>
+        </div>
+    </div>
+</section>
+{% endblock %}

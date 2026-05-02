@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} · Atelier{% endblock %}
+{% block content %}
+<section class="dashboard">
+    <div class="container" style="max-width: 980px;">
+        <div class="dashboard__head">
+            <div>
+                <p class="dashboard__eyebrow">Каталог · товар #{{ product.id }}</p>
+                <h1>{{ product.name }}</h1>
+                <p class="dashboard__sub">Продавец: <strong>{{ product.seller.username }}</strong></p>
+            </div>
+            <a href="/catalog" class="btn btn--ghost">К каталогу</a>
+        </div>
+
+        <div class="detail-grid">
+            <div class="detail-grid__image">
+                {% if product.image_filename %}
+                    <img src="/uploads/{{ product.image_filename }}" alt="{{ product.name }}" />
+                {% else %}
+                    <div class="product__noimage" style="height: 100%; min-height: 280px; display:grid; place-items:center;">
+                        Фото не загружено
+                    </div>
+                {% endif %}
+            </div>
+            <div class="detail-grid__info">
+                <p style="font-size: 22px;"><strong>{{ '%.2f'|format(product.price) }}</strong> ₽</p>
+                <p><strong>Размеры:</strong>
+                    {% if product.sizes_list %}{{ product.sizes_list | join(', ') }}{% else %}—{% endif %}
+                </p>
+                <p><strong>Описание:</strong></p>
+                <p style="white-space: pre-wrap;">{{ product.description or '—' }}</p>
+
+                {% if user and user.role.value == "buyer" %}
+                <form method="post" action="/cart/add" class="cart-add-form">
+                    <input type="hidden" name="product_id" value="{{ product.id }}" />
+                    <label for="quantity" style="margin-right: 8px;">Количество:</label>
+                    <input class="input" id="quantity" name="quantity" type="number"
+                           min="1" max="99" value="1" style="width: 96px; display: inline-block;" />
+                    <button type="submit" class="btn btn--primary">Добавить в корзину</button>
+                </form>
+                {% elif not user %}
+                <p style="color: var(--muted);">
+                    <a href="/login">Войдите</a> как покупатель, чтобы добавить товар в корзину.
+                </p>
+                {% else %}
+                <p style="color: var(--muted);">Корзина доступна только покупателям.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

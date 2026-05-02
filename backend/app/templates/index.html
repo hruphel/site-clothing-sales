@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Atelier — современный интернет-магазин одежды{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <div class="hero__eyebrow">Новый сезон · Осень / Зима</div>
+        <h1 class="hero__title">Одежда, в которой<br/>хочется работать и&nbsp;жить.</h1>
+        <p class="hero__lead">
+            Atelier — это пространство для покупателей, продавцов и&nbsp;администраторов.
+            Покупайте подобранные коллекции, управляйте каталогом и&nbsp;модерацией
+            в&nbsp;одном месте.
+        </p>
+        <div class="hero__actions">
+            <a class="btn btn--primary" href="/catalog">Открыть каталог</a>
+            {% if user %}
+                {% if user.role.value == "buyer" %}
+                    <a class="btn btn--ghost" href="/cart">Корзина</a>
+                {% elif user.role.value == "seller" %}
+                    <a class="btn btn--ghost" href="/seller">Витрина продавца</a>
+                {% else %}
+                    <a class="btn btn--ghost" href="/admin">Админ-панель</a>
+                {% endif %}
+            {% else %}
+                <a class="btn btn--ghost" href="/login">Войти</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="container">
+        <p class="section-title">Три роли · одна экосистема</p>
+        <div class="feature-grid">
+            <article class="feature">
+                <div class="feature__role">Покупатель</div>
+                <h3>Подбор и&nbsp;покупка</h3>
+                <p>Регистрация, просмотр каталога, корзина, оформление заказа, оплата и&nbsp;отслеживание доставки.</p>
+            </article>
+            <article class="feature">
+                <div class="feature__role">Продавец</div>
+                <h3>Управление товарами</h3>
+                <p>Добавление и&nbsp;редактирование позиций, загрузка фото, контроль остатков и&nbsp;цен.</p>
+            </article>
+            <article class="feature">
+                <div class="feature__role">Администратор</div>
+                <h3>Модерация и&nbsp;контроль</h3>
+                <p>Управление пользователями, модерация заявок продавцов, контроль заказов и&nbsp;контента.</p>
+            </article>
+        </div>
+    </div>
+</section>
+{% endblock %}
