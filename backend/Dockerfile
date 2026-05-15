@@ -7,9 +7,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
 # Системные зависимости: bcrypt/passlib собирается из бинарного wheel,
-# но reportlab иногда тянет шрифты — оставляем минимум.
+# fonts-dejavu-core нужен для рендера кириллицы в PDF-чеках (reportlab).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
