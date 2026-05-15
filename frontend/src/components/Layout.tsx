@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import { homeForRole, useAuth } from "../auth";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -31,7 +32,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   type="button"
                   className="btn btn--ghost"
                   onClick={() => {
-                    void logout();
+                    void logout().then(() => navigate("/", { replace: true }));
                   }}
                 >
                   Выйти

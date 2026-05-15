@@ -71,22 +71,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <section className="section section--muted">
-        <div className="container">
-          <div className="section-header">
-            <span className="eyebrow">Дальше</span>
-            <h2>Что уже работает</h2>
-          </div>
-          <ul className="bullets">
-            <li>Авторизация и три кабинета.</li>
-            <li>Каталог и корзина с учётом остатков по размерам.</li>
-            <li>Оформление заказа, имитация оплаты, PDF-чек.</li>
-            <li>Статусы доставки от админа/продавца к покупателю.</li>
-            <li>Заявки продавцов и модерация админом.</li>
-          </ul>
-        </div>
-      </section>
     </>
   );
 }

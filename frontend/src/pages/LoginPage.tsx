@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { ApiError } from "../api";
 import { homeForRole, useAuth } from "../auth";
@@ -8,8 +8,6 @@ import ErrorBox from "../components/ErrorBox";
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const next = params.get("next");
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +20,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const u = await login(identifier, password);
-      navigate(next || homeForRole(u.role), { replace: true });
+      navigate(homeForRole(u.role), { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Не удалось войти.");
     } finally {
