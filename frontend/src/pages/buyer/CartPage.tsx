@@ -60,7 +60,7 @@ export default function CartPage() {
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="eyebrow">UC-2</span>
+          <span className="eyebrow">Корзина</span>
           <h2>Корзина</h2>
         </div>
 
@@ -89,25 +89,36 @@ export default function CartPage() {
                     <Link to={`/catalog/${item.product.id}`} className="cart-row__title">
                       {item.product.name}
                     </Link>
-                    {item.product.sizes.length > 0 && (
-                      <div className="muted small">Размеры: {item.product.sizes.join(", ")}</div>
+                    {item.size && (
+                      <div className="muted small">Размер: <strong>{item.size}</strong></div>
                     )}
                     <div className="muted small">{formatPrice(item.product.price)} ₽ за шт.</div>
                   </div>
                   <div className="cart-row__qty">
-                    <input
-                      type="number"
-                      min={1}
-                      max={99}
-                      value={item.quantity}
-                      disabled={busy === item.id}
-                      onChange={(e) => {
-                        const q = Math.max(1, Math.min(99, Number(e.target.value) || 1));
-                        if (q !== item.quantity) {
-                          void update(item.id, q);
-                        }
-                      }}
-                    />
+                    {(() => {
+                      const stockForSize = item.size
+                        ? item.product.stock[item.size] ?? 0
+                        : 99;
+                      const max = Math.max(1, Math.min(99, stockForSize || 1));
+                      return (
+                        <>
+                          <input
+                            type="number"
+                            min={1}
+                            max={max}
+                            value={item.quantity}
+                            disabled={busy === item.id || stockForSize <= 0}
+                            onChange={(e) => {
+                              const q = Math.max(1, Math.min(max, Number(e.target.value) || 1));
+                              if (q !== item.quantity) {
+                                void update(item.id, q);
+                              }
+                            }}
+                          />
+                          <div className="muted small">из {stockForSize}</div>
+                        </>
+                      );
+                    })()}
                   </div>
                   <div className="cart-row__total">{formatPrice(item.line_total)} ₽</div>
                   <button

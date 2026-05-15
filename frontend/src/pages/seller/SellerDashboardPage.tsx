@@ -31,7 +31,6 @@ export default function SellerDashboardPage() {
 
         <div className="grid grid--3">
           <article className="card">
-            <div className="card-tag">UC-6</div>
             <h3>Мои товары</h3>
             <p>Заявки и опубликованные товары — добавляйте, редактируйте, удаляйте pending.</p>
             <Link to="/seller/products" className="card-link">
@@ -39,7 +38,6 @@ export default function SellerDashboardPage() {
             </Link>
           </article>
           <article className="card">
-            <div className="card-tag">UC-6</div>
             <h3>Новая заявка</h3>
             <p>Заполните форму — после модерации товар появится в каталоге.</p>
             <Link to="/seller/products/new" className="card-link">
@@ -47,7 +45,6 @@ export default function SellerDashboardPage() {
             </Link>
           </article>
           <article className="card">
-            <div className="card-tag">UC-5</div>
             <h3>Заказы и доставка</h3>
             <p>Меняйте статус доставки заказов, в которых есть ваши товары.</p>
             <Link to="/seller/orders" className="card-link">

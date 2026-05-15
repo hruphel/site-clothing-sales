@@ -1,4 +1,5 @@
 import enum
+import json
 from datetime import datetime
 from decimal import Decimal
 
@@ -6,6 +7,12 @@ from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Tex
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
+
+
+# Использовать как «по умолчанию хватает на всех» для данных, у которых нет
+# явно проставленного запаса (например, продукты, созданные до появления
+# колонки `stock_json`).
+LEGACY_STOCK_DEFAULT = 99
 
 
 class UserRole(str, enum.Enum):
@@ -83,6 +90,8 @@ class Product(Base):
     price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     # 20 размеров * 8 символов + 19 разделителей ", " = 198, берём 200 с запасом.
     sizes: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    # JSON-словарь {"S": 5, "M": 10, ...}: запас на складе по каждому размеру.
+    stock_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     image_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[ProductStatus] = mapped_column(
         Enum(ProductStatus, native_enum=False, length=16),
@@ -118,10 +127,30 @@ class Product(Base):
     def sizes_list(self) -> list[str]:
         return [s.strip() for s in self.sizes.split(",") if s.strip()]
 
+    @property
+    def sizes_stock(self) -> dict[str, int]:
+        """Запас по размерам. Для старых записей без stock_json — fallback на LEGACY_STOCK_DEFAULT."""
+        try:
+            raw = json.loads(self.stock_json or "{}")
+        except (ValueError, TypeError):
+            raw = {}
+        parsed: dict[str, int] = {}
+        for key, value in raw.items():
+            try:
+                parsed[str(key)] = max(0, int(value))
+            except (ValueError, TypeError):
+                continue
+        # Легаси: продукт, у которого ещё не проставлен stock, но есть sizes.
+        if not parsed:
+            return {s: LEGACY_STOCK_DEFAULT for s in self.sizes_list}
+        return parsed
+
 
 class CartItem(Base):
     __tablename__ = "cart_items"
-    __table_args__ = (UniqueConstraint("buyer_id", "product_id", name="uq_cart_buyer_product"),)
+    __table_args__ = (
+        UniqueConstraint("buyer_id", "product_id", "size", name="uq_cart_buyer_product_size"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     buyer_id: Mapped[int] = mapped_column(
@@ -134,6 +163,7 @@ class CartItem(Base):
         nullable=False,
         index=True,
     )
+    size: Mapped[str] = mapped_column(String(16), nullable=False, default="")
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

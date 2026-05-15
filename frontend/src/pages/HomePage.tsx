@@ -48,7 +48,6 @@ export default function HomePage() {
           </div>
           <div className="grid grid--3">
             <article className="card">
-              <div className="card-tag">UC-1</div>
               <h3>Покупатель</h3>
               <p>Создаёт аккаунт, формирует корзину, оформляет заказ, оплачивает и получает чек.</p>
               <Link to="/register" className="card-link">
@@ -56,7 +55,6 @@ export default function HomePage() {
               </Link>
             </article>
             <article className="card">
-              <div className="card-tag">UC-1 · UC-6</div>
               <h3>Продавец</h3>
               <p>Подаёт заявки на размещение товара. После одобрения товар появляется в каталоге.</p>
               <Link to="/register" className="card-link">
@@ -64,7 +62,6 @@ export default function HomePage() {
               </Link>
             </article>
             <article className="card">
-              <div className="card-tag">UC-1 · UC-7</div>
               <h3>Администратор</h3>
               <p>Проверяет заявки продавцов, одобряет или возвращает на доработку с комментарием.</p>
               <Link to="/login" className="card-link">
@@ -82,11 +79,11 @@ export default function HomePage() {
             <h2>Что уже работает</h2>
           </div>
           <ul className="bullets">
-            <li>UC-1 — авторизация и три кабинета.</li>
-            <li>UC-2 — каталог и корзина.</li>
-            <li>UC-3 / UC-4 — оформление заказа, имитация оплаты, PDF-чек.</li>
-            <li>UC-5 — статусы доставки от админа/продавца к покупателю.</li>
-            <li>UC-6 / UC-7 — заявки продавцов и модерация.</li>
+            <li>Авторизация и три кабинета.</li>
+            <li>Каталог и корзина с учётом остатков по размерам.</li>
+            <li>Оформление заказа, имитация оплаты, PDF-чек.</li>
+            <li>Статусы доставки от админа/продавца к покупателю.</li>
+            <li>Заявки продавцов и модерация админом.</li>
           </ul>
         </div>
       </section>

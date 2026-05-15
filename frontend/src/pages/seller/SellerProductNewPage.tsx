@@ -10,7 +10,7 @@ export default function SellerProductNewPage() {
     <section className="section">
       <div className="container narrow">
         <div className="section-header">
-          <span className="eyebrow">UC-6</span>
+          <span className="eyebrow">Новая заявка</span>
           <h2>Новая заявка на товар</h2>
         </div>
         <ProductForm

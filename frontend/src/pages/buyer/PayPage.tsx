@@ -67,7 +67,7 @@ export default function PayPage() {
     <section className="section">
       <div className="container narrow">
         <div className="section-header">
-          <span className="eyebrow">UC-4 • имитация оплаты</span>
+          <span className="eyebrow">Имитация оплаты</span>
           <h2>Оплата заказа №{order.id}</h2>
         </div>
         <div className="cart-summary cart-summary--inline">

@@ -26,7 +26,7 @@ export default function AdminOrdersPage() {
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="eyebrow">UC-5 • администратор</span>
+          <span className="eyebrow">Доставка • администратор</span>
           <h2>Доставка оплаченных заказов</h2>
         </div>
         <ErrorBox message={error} />

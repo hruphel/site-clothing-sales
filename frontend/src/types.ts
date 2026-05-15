@@ -18,6 +18,7 @@ export interface Product {
   description: string;
   price: string;
   sizes: string[];
+  stock: Record<string, number>;
   image_url: string | null;
   status: ProductStatus;
   status_label: string;
@@ -31,6 +32,7 @@ export interface Product {
 export interface CartItem {
   id: number;
   product: Product;
+  size: string;
   quantity: number;
   line_total: string;
 }

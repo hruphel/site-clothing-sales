@@ -74,24 +74,36 @@ export default function CatalogPage() {
           </p>
         ) : (
           <div className="grid grid--3 grid--gap">
-            {products.map((p) => (
-              <Link key={p.id} to={`/catalog/${p.id}`} className="product-card">
-                <div className="product-card__image">
-                  {p.image_url ? (
-                    <img src={p.image_url} alt={p.name} />
-                  ) : (
-                    <div className="product-card__placeholder">Без фото</div>
-                  )}
-                </div>
-                <div className="product-card__body">
-                  <h3>{p.name}</h3>
-                  <div className="product-card__price">{formatPrice(p.price)} ₽</div>
-                  {p.sizes.length > 0 && (
-                    <div className="muted small">Размеры: {p.sizes.join(", ")}</div>
-                  )}
-                </div>
-              </Link>
-            ))}
+            {products.map((p) => {
+              const hasSizes = p.sizes.length > 0;
+              const allOut =
+                hasSizes && p.sizes.every((s) => (p.stock[s] ?? 0) <= 0);
+              const availableSizes = p.sizes.filter((s) => (p.stock[s] ?? 0) > 0);
+              return (
+                <Link key={p.id} to={`/catalog/${p.id}`} className="product-card">
+                  <div className="product-card__image">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} />
+                    ) : (
+                      <div className="product-card__placeholder">Без фото</div>
+                    )}
+                  </div>
+                  <div className="product-card__body">
+                    <h3>{p.name}</h3>
+                    <div className="product-card__price">{formatPrice(p.price)} ₽</div>
+                    {hasSizes && (
+                      <div className="muted small">
+                        {allOut ? (
+                          <em>Нет в наличии</em>
+                        ) : (
+                          <>В наличии: {availableSizes.join(", ")}</>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

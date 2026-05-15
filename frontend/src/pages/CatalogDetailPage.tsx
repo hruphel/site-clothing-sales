@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { api, ApiError } from "../api";
@@ -15,6 +15,7 @@ export default function CatalogDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -23,16 +24,41 @@ export default function CatalogDetailPage() {
     setProduct(null);
     api
       .get<Product>(`/api/catalog/${id}`)
-      .then(setProduct)
+      .then((p) => {
+        setProduct(p);
+        // Автоматически выбираем первый размер с положительным запасом.
+        const firstAvailable = p.sizes.find((s) => (p.stock[s] ?? 0) > 0);
+        setSelectedSize(firstAvailable ?? "");
+      })
       .catch((err) => setError(err instanceof ApiError ? err.detail : "Не удалось загрузить."));
   }, [id]);
 
+  const availableForSize = useMemo(() => {
+    if (!product) return 0;
+    if (product.sizes.length === 0) return 99;
+    return product.stock[selectedSize] ?? 0;
+  }, [product, selectedSize]);
+
+  useEffect(() => {
+    if (quantity > availableForSize) {
+      setQuantity(Math.max(1, availableForSize));
+    }
+  }, [availableForSize, quantity]);
+
   async function addToCart() {
     if (!product) return;
+    if (product.sizes.length > 0 && !selectedSize) {
+      setError("Выберите размер.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      await api.post("/api/cart/add", { product_id: product.id, quantity });
+      await api.post("/api/cart/add", {
+        product_id: product.id,
+        size: selectedSize,
+        quantity,
+      });
       navigate("/cart");
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Не удалось добавить в корзину.");
@@ -68,6 +94,11 @@ export default function CatalogDetailPage() {
   }
 
   const canBuy = user === null || user.role === "buyer";
+  const hasSizes = product.sizes.length > 0;
+  const noStockAtAll = hasSizes && product.sizes.every((s) => (product.stock[s] ?? 0) <= 0);
+  const qtyMax = Math.max(1, availableForSize || 1);
+  const addDisabled =
+    busy || availableForSize <= 0 || (hasSizes && !selectedSize);
 
   return (
     <section className="section">
@@ -85,8 +116,44 @@ export default function CatalogDetailPage() {
             <h1>{product.name}</h1>
             <div className="product-detail__price">{formatPrice(product.price)} ₽</div>
 
-            {product.sizes.length > 0 && (
-              <div className="muted">Размеры: {product.sizes.join(", ")}</div>
+            {hasSizes && (
+              <div className="size-picker">
+                <div className="muted small">Размеры</div>
+                <div className="size-picker__list">
+                  {product.sizes.map((size) => {
+                    const qty = product.stock[size] ?? 0;
+                    const disabled = qty <= 0;
+                    const active = selectedSize === size;
+                    return (
+                      <button
+                        type="button"
+                        key={size}
+                        className={
+                          "size-chip" +
+                          (active ? " size-chip--active" : "") +
+                          (disabled ? " size-chip--disabled" : "")
+                        }
+                        disabled={disabled}
+                        title={disabled ? "Нет в наличии" : `В наличии: ${qty} шт.`}
+                        onClick={() => setSelectedSize(size)}
+                      >
+                        <span className="size-chip__label">{size}</span>
+                        <span className="size-chip__qty">
+                          {disabled ? "нет" : `${qty} шт.`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedSize && availableForSize > 0 && (
+                  <div className="muted small">
+                    Доступно к покупке: {availableForSize} шт.
+                  </div>
+                )}
+                {noStockAtAll && (
+                  <div className="alert alert--info">Сейчас нет в наличии ни одного размера.</div>
+                )}
+              </div>
             )}
 
             {product.description && <p>{product.description}</p>}
@@ -100,13 +167,21 @@ export default function CatalogDetailPage() {
                   <input
                     type="number"
                     min={1}
-                    max={99}
+                    max={qtyMax}
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Math.min(99, Number(e.target.value) || 1)))}
+                    onChange={(e) =>
+                      setQuantity(Math.max(1, Math.min(qtyMax, Number(e.target.value) || 1)))
+                    }
+                    disabled={availableForSize <= 0}
                   />
                 </label>
                 {user ? (
-                  <button className="btn btn--primary" type="button" onClick={addToCart} disabled={busy}>
+                  <button
+                    className="btn btn--primary"
+                    type="button"
+                    onClick={addToCart}
+                    disabled={addDisabled}
+                  >
                     {busy ? "Добавляем…" : "В корзину"}
                   </button>
                 ) : (

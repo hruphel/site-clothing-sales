@@ -63,7 +63,7 @@ export default function CheckoutPage() {
     <section className="section">
       <div className="container narrow">
         <div className="section-header">
-          <span className="eyebrow">UC-3</span>
+          <span className="eyebrow">Оформление заказа</span>
           <h2>Оформление заказа</h2>
         </div>
 

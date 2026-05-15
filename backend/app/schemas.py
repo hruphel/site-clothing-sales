@@ -81,6 +81,7 @@ class ProductOut(BaseModel):
     description: str
     price: Decimal
     sizes: list[str]
+    stock: dict[str, int]
     image_url: str | None
     status: ProductStatus
     status_label: str
@@ -92,12 +93,16 @@ class ProductOut(BaseModel):
 
     @classmethod
     def from_model(cls, p) -> "ProductOut":  # noqa: ANN001
+        stock = p.sizes_stock
+        # Размеры в каталоге отдаём в порядке хранения; запас — словарём.
+        sizes_order = p.sizes_list or list(stock.keys())
         return cls(
             id=p.id,
             name=p.name,
             description=p.description or "",
             price=p.price,
-            sizes=p.sizes_list,
+            sizes=sizes_order,
+            stock=stock,
             image_url=f"/uploads/{p.image_filename}" if p.image_filename else None,
             status=p.status,
             status_label=PRODUCT_STATUS_LABELS_RU.get(p.status, p.status.value),
@@ -115,6 +120,7 @@ class ProductOut(BaseModel):
 class CartItemOut(BaseModel):
     id: int
     product: ProductOut
+    size: str
     quantity: int
     line_total: Decimal
 
@@ -127,6 +133,7 @@ class CartOut(BaseModel):
 
 class CartAddIn(BaseModel):
     product_id: int
+    size: str = Field(default="", max_length=16)
     quantity: int = Field(default=1, ge=1, le=99)
 
 

@@ -53,13 +53,11 @@ export default function AdminDashboardPage() {
 
         <div className="grid grid--2 grid--gap" style={{ marginTop: 32 }}>
           <article className="card">
-            <div className="card-tag">UC-7</div>
             <h3>Модерация заявок</h3>
             <p>Одобрение и отклонение заявок продавцов.</p>
             <Link to="/admin/products" className="card-link">Открыть</Link>
           </article>
           <article className="card">
-            <div className="card-tag">UC-5</div>
             <h3>Доставка заказов</h3>
             <p>Передвигайте статусы доставки оплаченных заказов.</p>
             <Link to="/admin/orders" className="card-link">Открыть</Link>

@@ -33,7 +33,7 @@ export default function AdminProductsPage() {
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="eyebrow">UC-7</span>
+          <span className="eyebrow">Модерация</span>
           <h2>Модерация заявок</h2>
         </div>
 
