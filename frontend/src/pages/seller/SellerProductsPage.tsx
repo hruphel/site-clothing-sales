@@ -38,7 +38,7 @@ export default function SellerProductsPage() {
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="eyebrow">UC-6</span>
+          <span className="eyebrow">Мои товары</span>
           <h2>Мои товары</h2>
           <Link to="/seller/products/new" className="btn btn--primary btn--small">
             Добавить товар
@@ -71,6 +71,14 @@ export default function SellerProductsPage() {
                   <h3>{p.name}</h3>
                   <div className="product-card__price">{formatPrice(p.price)} ₽</div>
                   <StatusTag status={p.status} label={p.status_label} kind="product" />
+                  {p.sizes.length > 0 && (
+                    <div className="muted small">
+                      Запасы:{" "}
+                      {p.sizes
+                        .map((s) => `${s} — ${p.stock[s] ?? 0}`)
+                        .join(", ")}
+                    </div>
+                  )}
                   {p.status === "rejected" && p.rejection_reason && (
                     <p className="muted small">Причина отказа: {p.rejection_reason}</p>
                   )}

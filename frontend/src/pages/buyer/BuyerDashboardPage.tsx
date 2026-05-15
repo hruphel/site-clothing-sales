@@ -13,7 +13,6 @@ export default function BuyerDashboardPage() {
         </div>
         <div className="grid grid--3">
           <article className="card">
-            <div className="card-tag">UC-2</div>
             <h3>Каталог</h3>
             <p>Просмотр опубликованных товаров и поиск по названию.</p>
             <Link to="/catalog" className="card-link">
@@ -21,7 +20,6 @@ export default function BuyerDashboardPage() {
             </Link>
           </article>
           <article className="card">
-            <div className="card-tag">UC-2</div>
             <h3>Корзина</h3>
             <p>Добавленные товары и оформление заказа.</p>
             <Link to="/cart" className="card-link">
@@ -29,7 +27,6 @@ export default function BuyerDashboardPage() {
             </Link>
           </article>
           <article className="card">
-            <div className="card-tag">UC-3 · UC-4 · UC-5</div>
             <h3>Мои заказы</h3>
             <p>История заказов, оплата, чеки и статус доставки.</p>
             <Link to="/orders" className="card-link">

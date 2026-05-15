@@ -52,7 +52,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <footer className="site-footer">
         <div className="container site-footer__inner">
           <span>© 2025 Maison Couture</span>
-          <span className="muted">Учебный проект • UC-1…UC-7</span>
+          <span className="muted">Учебный проект</span>
         </div>
       </footer>
     </>

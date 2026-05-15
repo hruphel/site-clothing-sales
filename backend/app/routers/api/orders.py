@@ -133,7 +133,7 @@ def checkout(
                 product_id=ci.product.id,
                 product_name=ci.product.name,
                 product_price=ci.product.price,
-                sizes=ci.product.sizes,
+                sizes=ci.size or ci.product.sizes,
                 quantity=ci.quantity,
             )
         )

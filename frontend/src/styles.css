@@ -265,6 +265,45 @@ button { font: inherit; }
   border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
 }
 
+/* -------- size picker (catalog detail) -------- */
+.size-picker { display: flex; flex-direction: column; gap: 8px; margin: 4px 0; }
+.size-picker__list { display: flex; flex-wrap: wrap; gap: 8px; }
+.size-chip {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 70px; padding: 8px 12px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); font: inherit; cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  gap: 2px;
+}
+.size-chip:hover:not(:disabled) { border-color: var(--accent); }
+.size-chip--active { border-color: var(--accent); background: var(--accent-soft); }
+.size-chip--disabled, .size-chip:disabled {
+  opacity: 0.45; cursor: not-allowed; text-decoration: line-through;
+}
+.size-chip__label { font-weight: 600; font-size: 14px; }
+.size-chip__qty { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.size-chip--active .size-chip__qty { color: var(--accent); }
+
+/* -------- stock editor (seller product form) -------- */
+.stock-editor {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px;
+}
+.stock-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stock-row__check { display: flex; align-items: center; gap: 8px; min-width: 110px; }
+.stock-row__check input[type="checkbox"] { width: 16px; height: 16px; }
+.stock-row__size {
+  width: 140px; padding: 6px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+}
+.stock-row__qty {
+  width: 100px; padding: 6px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+}
+.stock-row__qty:disabled { opacity: 0.4; }
+
 .alert {
   border: 1px solid var(--border);
   border-radius: 10px;

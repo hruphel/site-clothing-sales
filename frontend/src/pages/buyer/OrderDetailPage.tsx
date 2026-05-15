@@ -69,7 +69,6 @@ export default function OrderDetailPage() {
 
         <div className="grid grid--2 grid--gap">
           <div className="card">
-            <div className="card-tag">UC-3</div>
             <h3>Состав заказа</h3>
             <ul className="order-items">
               {order.items.map((it) => (
@@ -102,7 +101,6 @@ export default function OrderDetailPage() {
           </div>
 
           <div className="card">
-            <div className="card-tag">UC-5 · доставка</div>
             <h3>Доставка</h3>
             <p className="muted small">
               Создан: {formatDateTime(order.created_at)}<br />

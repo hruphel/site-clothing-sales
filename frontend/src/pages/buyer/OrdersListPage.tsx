@@ -22,7 +22,7 @@ export default function OrdersListPage() {
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="eyebrow">UC-3 · UC-4 · UC-5</span>
+          <span className="eyebrow">Заказы</span>
           <h2>Мои заказы</h2>
         </div>
         <ErrorBox message={error} />

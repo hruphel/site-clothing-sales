@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -48,3 +48,27 @@ def init_db() -> None:
     from . import models  # noqa: F401  гарантируем регистрацию моделей
 
     Base.metadata.create_all(bind=engine)
+    _apply_inline_migrations()
+
+
+def _apply_inline_migrations() -> None:
+    """Идемпотентные ALTER TABLE для столбцов, добавленных после первого релиза.
+
+    Используем там, где Alembic избыточен (учебный проект). Работает для
+    SQLite и PostgreSQL: оба понимают `ALTER TABLE ... ADD COLUMN`.
+    """
+    insp = inspect(engine)
+    tables = set(insp.get_table_names())
+    with engine.begin() as conn:
+        if "products" in tables:
+            cols = {c["name"] for c in insp.get_columns("products")}
+            if "stock_json" not in cols:
+                conn.execute(
+                    text("ALTER TABLE products ADD COLUMN stock_json TEXT NOT NULL DEFAULT '{}'")
+                )
+        if "cart_items" in tables:
+            cols = {c["name"] for c in insp.get_columns("cart_items")}
+            if "size" not in cols:
+                conn.execute(
+                    text("ALTER TABLE cart_items ADD COLUMN size VARCHAR(16) NOT NULL DEFAULT ''")
+                )

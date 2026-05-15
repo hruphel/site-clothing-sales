@@ -56,7 +56,7 @@ export default function SellerProductEditPage() {
     <section className="section">
       <div className="container narrow">
         <div className="section-header">
-          <span className="eyebrow">UC-6 • редактирование</span>
+          <span className="eyebrow">Редактирование заявки</span>
           <h2>{product.name}</h2>
         </div>
         <ProductForm
@@ -65,7 +65,7 @@ export default function SellerProductEditPage() {
           initial={{
             name: product.name,
             price: product.price,
-            sizes: product.sizes.join(", "),
+            stock: product.stock,
             description: product.description,
             imageUrl: product.image_url,
           }}

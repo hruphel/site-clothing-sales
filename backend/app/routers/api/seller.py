@@ -1,6 +1,7 @@
 """API продавца: товары (CRUD pending) и заказы/доставка."""
 from __future__ import annotations
 
+import json
 import re
 import secrets
 import shutil
@@ -35,6 +36,7 @@ DESCRIPTION_MAX_LENGTH = 4000
 SIZES_MAX_COUNT = 20
 SIZE_MIN_LENGTH = 1
 SIZE_MAX_LENGTH = 8
+STOCK_PER_SIZE_MAX = 9999
 _SIZE_PATTERN = re.compile(r"^[A-Za-zА-Яа-яЁё0-9\.\- ]+$")
 
 
@@ -75,40 +77,71 @@ def _parse_price(raw: str) -> Decimal:
     return value.quantize(Decimal("0.01"))
 
 
-def _validate_sizes(raw: str) -> str:
-    items = [s.strip() for s in raw.split(",") if s.strip()]
-    if len(items) > SIZES_MAX_COUNT:
+def _validate_single_size(raw: str) -> str:
+    s = raw.strip()
+    if len(s) < SIZE_MIN_LENGTH or len(s) > SIZE_MAX_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Размер «{s}» должен быть от {SIZE_MIN_LENGTH} до {SIZE_MAX_LENGTH} символов.",
+        )
+    if not _SIZE_PATTERN.match(s):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Размер «{s}» может содержать только буквы, цифры, точку, дефис и пробел.",
+        )
+    return s
+
+
+def _validate_stock(raw: str) -> dict[str, int]:
+    """Принимает JSON-строку `{"S": 5, "M": 10}` и возвращает очищенный dict.
+
+    Пустая строка / пустой объект означают «у товара нет размеров со складским учётом».
+    """
+    raw_clean = (raw or "").strip()
+    if not raw_clean:
+        return {}
+    try:
+        data = json.loads(raw_clean)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Запасы по размерам должны быть валидным JSON.") from None
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=400, detail="Запасы по размерам должны быть объектом «размер → количество».")
+    if len(data) > SIZES_MAX_COUNT:
         raise HTTPException(status_code=400, detail=f"Слишком много размеров — максимум {SIZES_MAX_COUNT}.")
+    cleaned: dict[str, int] = {}
     seen: set[str] = set()
-    cleaned: list[str] = []
-    for s in items:
-        if len(s) < SIZE_MIN_LENGTH or len(s) > SIZE_MAX_LENGTH:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Размер «{s}» должен быть от {SIZE_MIN_LENGTH} до {SIZE_MAX_LENGTH} символов.",
-            )
-        if not _SIZE_PATTERN.match(s):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Размер «{s}» может содержать только буквы, цифры, точку, дефис и пробел.",
-            )
-        key = s.upper()
-        if key in seen:
+    for key, value in data.items():
+        size = _validate_single_size(str(key))
+        upper = size.upper()
+        if upper in seen:
             continue
-        seen.add(key)
-        cleaned.append(s)
-    return ", ".join(cleaned)
+        seen.add(upper)
+        try:
+            qty = int(value)
+        except (TypeError, ValueError):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Количество для размера «{size}» должно быть целым числом.",
+            ) from None
+        if qty < 0 or qty > STOCK_PER_SIZE_MAX:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Количество для размера «{size}» должно быть в диапазоне 0..{STOCK_PER_SIZE_MAX}.",
+            )
+        cleaned[size] = qty
+    return cleaned
 
 
 @dataclass
 class _ProductInput:
     name: str
     price: Decimal
+    stock: dict[str, int]
     sizes: str
     description: str
 
 
-def _validate_basic(name: str, price: str, sizes: str, description: str) -> _ProductInput:
+def _validate_basic(name: str, price: str, stock_raw: str, description: str) -> _ProductInput:
     name_clean = name.strip()
     if not name_clean:
         raise HTTPException(status_code=400, detail="Название не может быть пустым.")
@@ -118,14 +151,15 @@ def _validate_basic(name: str, price: str, sizes: str, description: str) -> _Pro
             detail=f"Название не должно быть длиннее {NAME_MAX_LENGTH} символов.",
         )
     price_value = _parse_price(price)
-    sizes_clean = _validate_sizes(sizes)
+    stock_clean = _validate_stock(stock_raw)
+    sizes_str = ", ".join(stock_clean.keys())
     description_clean = description.strip()
     if len(description_clean) > DESCRIPTION_MAX_LENGTH:
         raise HTTPException(
             status_code=400,
             detail=f"Описание не должно быть длиннее {DESCRIPTION_MAX_LENGTH} символов.",
         )
-    return _ProductInput(name_clean, price_value, sizes_clean, description_clean)
+    return _ProductInput(name_clean, price_value, stock_clean, sizes_str, description_clean)
 
 
 def _own_product_or_404(db: Session, seller: User, product_id: int) -> Product:
@@ -174,13 +208,13 @@ def get_product(product_id: int, seller: User = Depends(require_seller), db: Ses
 def create_product(
     name: str = Form(...),
     price: str = Form(...),
-    sizes: str = Form(""),
+    stock: str = Form(""),
     description: str = Form(""),
     image: UploadFile = File(None),
     seller: User = Depends(require_seller),
     db: Session = Depends(get_db),
 ):
-    data = _validate_basic(name, price, sizes, description)
+    data = _validate_basic(name, price, stock, description)
     saved_filename = _save_upload(image)
 
     product = Product(
@@ -188,6 +222,7 @@ def create_product(
         description=data.description,
         price=data.price,
         sizes=data.sizes,
+        stock_json=json.dumps(data.stock, ensure_ascii=False),
         image_filename=saved_filename,
         status=ProductStatus.PENDING,
         seller_id=seller.id,
@@ -203,7 +238,7 @@ def edit_product(
     product_id: int,
     name: str = Form(...),
     price: str = Form(...),
-    sizes: str = Form(""),
+    stock: str = Form(""),
     description: str = Form(""),
     image: UploadFile = File(None),
     remove_image: str = Form(""),
@@ -214,13 +249,14 @@ def edit_product(
     if product.status != ProductStatus.PENDING:
         raise HTTPException(status_code=409, detail="Редактировать можно только товары в статусе «На модерации».")
 
-    data = _validate_basic(name, price, sizes, description)
+    data = _validate_basic(name, price, stock, description)
     new_filename = _save_upload(image)
 
     old_filename = product.image_filename
     product.name = data.name
     product.price = data.price
     product.sizes = data.sizes
+    product.stock_json = json.dumps(data.stock, ensure_ascii=False)
     product.description = data.description
     image_changed = False
     if new_filename is not None:

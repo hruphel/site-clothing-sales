@@ -76,7 +76,7 @@ export default function AdminProductDetailPage() {
     <section className="section">
       <div className="container">
         <div className="section-header">
-          <span className="eyebrow">UC-7</span>
+          <span className="eyebrow">Модерация</span>
           <h2>{product.name}</h2>
           <StatusTag status={product.status} label={product.status_label} kind="product" />
         </div>
