@@ -2,9 +2,11 @@ import type { ReactNode } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import { homeForRole, useAuth } from "../auth";
+import { useTheme } from "../theme";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   return (
@@ -46,6 +48,15 @@ export default function Layout({ children }: { children: ReactNode }) {
                 </Link>
               </>
             )}
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
+              aria-label={theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему"}
+            >
+              {theme === "dark" ? "☀" : "☾"}
+            </button>
           </nav>
         </div>
       </header>
