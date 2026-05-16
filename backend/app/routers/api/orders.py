@@ -1,6 +1,7 @@
 """UC-3 (оформление заказа), UC-4 (имитация оплаты + чек+PDF)."""
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -48,6 +49,31 @@ def _active_cart(db: Session, buyer_id: int) -> list[CartItem]:
         .all()
     )
     return [i for i in items if i.product.status == ProductStatus.PUBLISHED]
+
+
+def _decrement_stock_for_order(db: Session, order: Order) -> None:
+    """Списывает оплаченные товары со склада по выбранному размеру.
+
+    Работает по факту перехода заказа в PAID. Перед каждым декрементом снова
+    подгружает Product, чтобы не сесть на устаревший кэш. Если товар уже удалён
+    или поле размера в позиции не совпадает с ключом в `sizes_stock` (например,
+    старая позиция без явного размера), эту строку пропускаем — лучше тихо,
+    чем уронить оплату уже совершённого заказа. Уйти ниже нуля не позволяем.
+    """
+    for item in order.items:
+        if item.product_id is None:
+            continue
+        product = db.get(Product, item.product_id)
+        if product is None:
+            continue
+        stock = product.sizes_stock
+        if not stock:
+            continue
+        size_key = (item.sizes or "").strip()
+        if not size_key or size_key not in stock:
+            continue
+        stock[size_key] = max(0, stock[size_key] - int(item.quantity or 0))
+        product.stock_json = json.dumps(stock, ensure_ascii=False)
 
 
 def _own_order_or_404(db: Session, buyer: User, order_id: int) -> Order:
@@ -171,6 +197,7 @@ def pay(
     order.status = OrderStatus.PAID
     order.paid_at = issued_at
     order.delivery_updated_at = issued_at
+    _decrement_stock_for_order(db, order)
     pdf_filename = render_receipt_pdf(order, receipt_number, transaction_id, issued_at)
     receipt = Receipt(
         order_id=order.id,
