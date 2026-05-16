@@ -6,9 +6,34 @@ import ErrorBox from "../components/ErrorBox";
 import { formatPrice } from "../utils";
 import type { Product } from "../types";
 
+type SortKey =
+  | "newest"
+  | "name_asc"
+  | "name_desc"
+  | "price_asc"
+  | "price_desc"
+  | "stock_asc"
+  | "stock_desc";
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "newest", label: "Сначала новые" },
+  { value: "name_asc", label: "Название: А → Я" },
+  { value: "name_desc", label: "Название: Я → А" },
+  { value: "price_asc", label: "Цена: по возрастанию" },
+  { value: "price_desc", label: "Цена: по убыванию" },
+  { value: "stock_desc", label: "Сначала где больше в наличии" },
+  { value: "stock_asc", label: "Сначала где меньше в наличии" },
+];
+
+function totalStock(p: Product): number {
+  return Object.values(p.stock).reduce((acc, v) => acc + (Number(v) || 0), 0);
+}
+
 export default function CatalogPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
+  const sortParam = (params.get("sort") ?? "newest") as SortKey;
+  const sort: SortKey = SORT_OPTIONS.some((o) => o.value === sortParam) ? sortParam : "newest";
   const [draft, setDraft] = useState(q);
   const [products, setProducts] = useState<Product[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -16,20 +41,27 @@ export default function CatalogPage() {
   useEffect(() => {
     setError(null);
     setProducts(null);
+    const qs = new URLSearchParams();
+    if (q) qs.set("q", q);
+    qs.set("sort", sort);
     api
-      .get<Product[]>(`/api/catalog${q ? `?q=${encodeURIComponent(q)}` : ""}`)
+      .get<Product[]>(`/api/catalog?${qs.toString()}`)
       .then(setProducts)
       .catch((err) => setError(err instanceof ApiError ? err.detail : "Ошибка загрузки."));
-  }, [q]);
+  }, [q, sort]);
+
+  function updateParams(next: { q?: string; sort?: SortKey }) {
+    const obj: Record<string, string> = {};
+    const newQ = next.q !== undefined ? next.q : q;
+    const newSort = next.sort !== undefined ? next.sort : sort;
+    if (newQ) obj.q = newQ;
+    if (newSort !== "newest") obj.sort = newSort;
+    setParams(obj);
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = draft.trim();
-    if (trimmed) {
-      setParams({ q: trimmed });
-    } else {
-      setParams({});
-    }
+    updateParams({ q: draft.trim() });
   }
 
   return (
@@ -56,12 +88,25 @@ export default function CatalogPage() {
               className="btn btn--ghost"
               onClick={() => {
                 setDraft("");
-                setParams({});
+                updateParams({ q: "" });
               }}
             >
               Сбросить
             </button>
           )}
+          <label className="search-bar__sort">
+            <span className="muted small">Сортировка</span>
+            <select
+              value={sort}
+              onChange={(e) => updateParams({ sort: e.target.value as SortKey })}
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </form>
 
         <ErrorBox message={error} />
@@ -79,6 +124,7 @@ export default function CatalogPage() {
               const allOut =
                 hasSizes && p.sizes.every((s) => (p.stock[s] ?? 0) <= 0);
               const availableSizes = p.sizes.filter((s) => (p.stock[s] ?? 0) > 0);
+              const stockTotal = totalStock(p);
               return (
                 <Link key={p.id} to={`/catalog/${p.id}`} className="product-card">
                   <div className="product-card__image">
@@ -96,7 +142,9 @@ export default function CatalogPage() {
                         {allOut ? (
                           <em>Нет в наличии</em>
                         ) : (
-                          <>В наличии: {availableSizes.join(", ")}</>
+                          <>
+                            В наличии: {availableSizes.join(", ")} · всего {stockTotal} шт.
+                          </>
                         )}
                       </div>
                     )}
